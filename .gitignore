@@ -1,0 +1,4 @@
+.stack-work/
+renum-files.cabal
+*~
+.DS_Store
