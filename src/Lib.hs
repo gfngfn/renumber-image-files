@@ -12,18 +12,22 @@ getFileList :: IO ()
 getFileList =
   Dir.getDirectoryContents "." >>= printList
 
+
 printList :: [String] -> IO ()
 printList [] = return ()
-printList (s : ss) =
-  case s of
-    '.' : _ -> putStrLn ("* " ++ s) >>= \() -> printList ss
-    _       -> putStrLn ("  " ++ s) >>= \() -> printList ss
+printList (fname : fnames) =
+  case P.parse parseFileName (T.pack fname) `P.feed` "" of
+    P.Done "" (s, kd, ext) ->
+      let
+        str =
+          case kd of
+            Single n -> " (" ++ s ++ "[" ++ show n ++ "]" ++ ext ++ ")"
+            Multiple n i -> " (" ++ s ++ "[" ++ show n ++ ":" ++ show i ++ "]" ++ ext ++ ")"
+      in
+      putStrLn ("* " ++ fname ++ str) >>= \() -> printList fnames
 
-{-
-fileNameParser :: Parser (Text, Int)
-fileNameParser = do
-  s <- word
--}
+    _ -> putStrLn ("  " ++ fname) >>= \() -> printList fnames
+
 
 data Kind
   = Single Int
