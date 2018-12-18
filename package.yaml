@@ -24,6 +24,10 @@ dependencies:
 - directory
 - text
 - attoparsec
+- aeson
+- unordered-containers
+- scientific
+- bytestring
 
 library:
   source-dirs: src
