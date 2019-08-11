@@ -1,6 +1,7 @@
 module Lib where
 
 import qualified System.Directory as Dir
+import Control.Monad
 
 import Types
 import qualified FileNameParser
@@ -8,15 +9,17 @@ import qualified FileNameParser
 
 getFileList :: IO ()
 getFileList = do
-  fnames <- Dir.getDirectoryContents "."
-  printList fnames
+  fnames <- Dir.listDirectory "."
+  printFileList fnames
 
 
-printList :: [String] -> IO ()
-printList [] =
-  return ()
+printFileList :: [String] -> IO ()
+printFileList fnames =
+  forM_ fnames printFile
 
-printList (fname : fnames) =
+
+printFile :: String -> IO ()
+printFile fname =
   case FileNameParser.parse fname of
     Just (s, kd, ext) ->
       let
@@ -24,10 +27,8 @@ printList (fname : fnames) =
           case kd of
             Single n -> " (" ++ s ++ "[" ++ show n ++ "]" ++ ext ++ ")"
             Multiple n i -> " (" ++ s ++ "[" ++ show n ++ ":" ++ show i ++ "]" ++ ext ++ ")"
-      in do
-        putStrLn ("* " ++ fname ++ str)
-        printList fnames
+      in
+      putStrLn ("* " ++ fname ++ str)
 
-    Nothing -> do
-        putStrLn ("  " ++ fname)
-        printList fnames
+    Nothing ->
+      putStrLn ("  " ++ fname)
