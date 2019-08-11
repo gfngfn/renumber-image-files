@@ -7,8 +7,9 @@ import qualified FileNameParser
 
 
 getFileList :: IO ()
-getFileList =
-  Dir.getDirectoryContents "." >>= printList
+getFileList = do
+  fnames <- Dir.getDirectoryContents "."
+  printList fnames
 
 
 printList :: [String] -> IO ()
@@ -23,8 +24,10 @@ printList (fname : fnames) =
           case kd of
             Single n -> " (" ++ s ++ "[" ++ show n ++ "]" ++ ext ++ ")"
             Multiple n i -> " (" ++ s ++ "[" ++ show n ++ ":" ++ show i ++ "]" ++ ext ++ ")"
-      in
-      putStrLn ("* " ++ fname ++ str) >>= \() -> printList fnames
+      in do
+        putStrLn ("* " ++ fname ++ str)
+        printList fnames
 
-    Nothing ->
-      putStrLn ("  " ++ fname) >>= \() -> printList fnames
+    Nothing -> do
+        putStrLn ("  " ++ fname)
+        printList fnames
