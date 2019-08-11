@@ -12,8 +12,8 @@ import Types
 parse :: String -> Maybe FileInfo
 parse fname =
   case P.parse parseFileName (T.pack fname) `P.feed` "" of
-    P.Done "" (s, n, i, ext) -> Just (s, n, i, ext)
-    _                        -> Nothing
+    P.Done "" finfo -> Just finfo
+    _               -> Nothing
 
 
 parseDigits :: Int -> P.Parser Int
@@ -55,7 +55,7 @@ parseFileName =
         pLast <|> pMiddle
           where
             pLast :: P.Parser FileInfo
-            pLast = (\(c, n, i, ext) -> (sacc ++ [c], n, i, ext)) <$> parseNumbering
+            pLast = (\(c, n, i, ext) -> FileInfo (sacc ++ [c], n, i, ext)) <$> parseNumbering
 
             pMiddle :: P.Parser FileInfo
             pMiddle = do

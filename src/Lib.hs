@@ -22,7 +22,7 @@ printFileList fnames =
 printFile :: String -> IO ()
 printFile fname =
   case FileNameParser.parse fname of
-    Just (s, n, iopt, ext) ->
+    Just (FileInfo (s, n, iopt, ext)) ->
       let
         str =
           case iopt of
@@ -39,8 +39,8 @@ makeValidationMap :: [FileInfo] -> ([Error], TagMap.TagMap)
 makeValidationMap files =
   let
     validateSingle :: ([Error], TagMap.TagMap) -> FileInfo -> ([Error], TagMap.TagMap)
-    validateSingle (errAcc, tagMap) file =
-      let (tag, n, iopt, ext) = file in
+    validateSingle (errAcc, tagMap) finfo =
+      let FileInfo (tag, n, iopt, ext) = finfo in
       case TagMap.add tag n iopt ext tagMap of
         Right tagMapNew -> (errAcc, tagMapNew)
         Left err        -> (err : errAcc, tagMap)
