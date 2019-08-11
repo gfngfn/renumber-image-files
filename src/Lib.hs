@@ -22,17 +22,14 @@ printFileList fnames =
 printFile :: String -> IO ()
 printFile fname =
   case FileNameParser.parse fname of
-    Just (FileInfo (s, n, iopt, ext)) ->
+    Just (FileInfo (tag, n, iopt, ext)) ->
       let
-        str =
-          case iopt of
-            Nothing -> " (" ++ s ++ "[" ++ show n ++ "]" ++ ext ++ ")"
-            Just i  -> " (" ++ s ++ "[" ++ show n ++ ":" ++ show i ++ "]" ++ ext ++ ")"
+        str = showFile tag n iopt ext
       in
-      putStrLn ("* " ++ fname ++ str)
+      putStrLn $ "* " ++ fname ++ " (" ++ str ++ ")"
 
     Nothing ->
-      putStrLn ("  " ++ fname)
+      putStrLn $ "  " ++ fname
 
 
 makeValidationMap :: [FileInfo] -> ([Error], TagMap.TagMap)
@@ -46,3 +43,53 @@ makeValidationMap files =
         Left err        -> (err : errAcc, tagMap)
   in
   foldl validateSingle ([], TagMap.empty) files
+
+
+printError :: Error -> IO ()
+printError err =
+  case err of
+    SingleAlreadyExists tag n ext1 i ext2 ->
+      let
+        fname1 = showFile tag n Nothing ext1
+        fname2 = showFile tag n (Just i) ext2
+      in do
+        putStrLn $ "! There already exists a single:"
+        putStrLn $ "  * " ++ fname1
+        putStrLn $ "  and thus cannot validate:"
+        putStrLn $ "  * " ++ fname2
+
+    MultipleAlreadyExists tag n _ ext2 ->
+      let
+        fname2 = showFile tag n Nothing ext2
+      in do
+        putStrLn $ "! There already exists a multiple, and should rename:"
+        putStrLn $ "  * " ++ fname2
+
+    DuplicatedSingle tag n ext1 ext2 ->
+      let
+        fname1 = showFile tag n Nothing ext1
+        fname2 = showFile tag n Nothing ext2
+      in do
+        putStrLn $ "! duplication as to extension:"
+        putStrLn $ "  * " ++ fname1
+        putStrLn $ "  * " ++ fname2
+
+    DuplicatedMultiple tag n i ext1 ext2 ->
+      let
+        fname1 = showFile tag n (Just i) ext1
+        fname2 = showFile tag n (Just i) ext2
+      in do
+        putStrLn $ "! duplication as to extension:"
+        putStrLn $ "  * " ++ fname1
+        putStrLn $ "  * " ++ fname2
+
+
+showFile :: Tag -> Number -> Maybe Index -> Extension -> String
+showFile tag n iopt ext =
+  let
+    istr =
+      case iopt of
+        Nothing -> ""
+        Just i  -> ":" ++ show i
+  in
+  tag ++ "[" ++ show n ++ istr ++ "]." ++ ext
