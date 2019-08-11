@@ -28,6 +28,7 @@ dependencies:
 - unordered-containers
 - scientific
 - bytestring
+- containers
 
 library:
   source-dirs: src

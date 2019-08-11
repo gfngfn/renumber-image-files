@@ -9,11 +9,11 @@ import Control.Applicative
 import Types
 
 
-parse :: String -> Maybe (String, Kind, Extension)
+parse :: String -> Maybe FileInfo
 parse fname =
   case P.parse parseFileName (T.pack fname) `P.feed` "" of
-    P.Done "" (s, kd, ext) -> Just (s, kd, ext)
-    _                      -> Nothing
+    P.Done "" (s, n, i, ext) -> Just (s, n, i, ext)
+    _                        -> Nothing
 
 
 parseDigits :: Int -> P.Parser Int
@@ -38,31 +38,26 @@ parseIndex =
       p2 = (\n s -> (Just n, s)) <$> (P.char '_' *> parseDigits 2) <*> parseExtension
 
 
-parseNumbering :: P.Parser (Char, Kind, Extension)
+parseNumbering :: P.Parser (Char, Int, Maybe Int, Extension)
 parseNumbering = do
   lastLetter <- P.letter
   number <- parseDigits 3
   (maybeIndex, ext) <- parseIndex
-  let
-    kd =
-      case maybeIndex of
-        Nothing -> Single number
-        Just index -> Multiple number index
-  return (lastLetter, kd, ext)
+  return (lastLetter, number, maybeIndex, ext)
 
 
-parseFileName :: P.Parser (String, Kind, Extension)
+parseFileName :: P.Parser FileInfo
 parseFileName =
   aux ""
     where
-      aux :: String -> P.Parser (String, Kind, Extension)
+      aux :: String -> P.Parser FileInfo
       aux sacc =
         pLast <|> pMiddle
           where
-            pLast :: P.Parser (String, Kind, Extension)
-            pLast = (\(c, kd, ext) -> (sacc ++ [c], kd, ext)) <$> parseNumbering
+            pLast :: P.Parser FileInfo
+            pLast = (\(c, n, i, ext) -> (sacc ++ [c], n, i, ext)) <$> parseNumbering
 
-            pMiddle :: P.Parser (String, Kind, Extension)
+            pMiddle :: P.Parser FileInfo
             pMiddle = do
               c <- P.letter <|> P.digit
               aux (sacc ++ [c])

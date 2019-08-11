@@ -21,12 +21,12 @@ printFileList fnames =
 printFile :: String -> IO ()
 printFile fname =
   case FileNameParser.parse fname of
-    Just (s, kd, ext) ->
+    Just (s, n, iopt, ext) ->
       let
         str =
-          case kd of
-            Single n -> " (" ++ s ++ "[" ++ show n ++ "]" ++ ext ++ ")"
-            Multiple n i -> " (" ++ s ++ "[" ++ show n ++ ":" ++ show i ++ "]" ++ ext ++ ")"
+          case iopt of
+            Nothing -> " (" ++ s ++ "[" ++ show n ++ "]" ++ ext ++ ")"
+            Just i  -> " (" ++ s ++ "[" ++ show n ++ ":" ++ show i ++ "]" ++ ext ++ ")"
       in
       putStrLn ("* " ++ fname ++ str)
 
