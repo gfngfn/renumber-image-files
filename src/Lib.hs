@@ -1,5 +1,6 @@
 module Lib where
 
+import qualified Data.Map.Strict as Map
 import qualified System.Directory as Dir
 import Control.Monad
 
@@ -11,7 +12,10 @@ import qualified TagMap
 getFileList :: IO ()
 getFileList = do
   fnames <- Dir.listDirectory "."
-  printFileList fnames
+  finfos <- parseFileNames fnames
+  let (errs, _) = makeValidationMap finfos
+  forM_ errs printError
+--  printFileList fnames
 
 
 printFileList :: [String] -> IO ()
@@ -30,6 +34,25 @@ printFile fname =
 
     Nothing ->
       putStrLn $ "  " ++ fname
+
+
+parseFileNames :: [String] -> IO [FileInfo]
+parseFileNames fnames =
+  let
+    aux :: [FileInfo] -> [String] -> IO [FileInfo]
+    aux acc [] =
+      return $ reverse acc
+
+    aux acc (fname : fnametail) =
+      case FileNameParser.parse fname of
+        Just finfo ->
+          aux (finfo : acc) fnametail
+
+        Nothing -> do
+          putStrLn $ "! cannot parse '" ++ fname ++ "'"
+          aux acc fnametail
+  in
+  aux [] fnames
 
 
 makeValidationMap :: [FileInfo] -> ([Error], TagMap.TagMap)
@@ -58,11 +81,13 @@ printError err =
         putStrLn $ "  and thus cannot validate:"
         putStrLn $ "  * " ++ fname2
 
-    MultipleAlreadyExists tag n _ ext2 ->
+    MultipleAlreadyExists tag n multMap ext2 ->
       let
         fname2 = showFile tag n Nothing ext2
       in do
-        putStrLn $ "! There already exists a multiple, and should rename:"
+        putStrLn $ "! There already exists a multiple:"
+        printMultiple tag n multMap
+        putStrLn $ "and should rename:"
         putStrLn $ "  * " ++ fname2
 
     DuplicatedSingle tag n ext1 ext2 ->
@@ -82,6 +107,12 @@ printError err =
         putStrLn $ "! duplication as to extension:"
         putStrLn $ "  * " ++ fname1
         putStrLn $ "  * " ++ fname2
+
+
+printMultiple :: Tag -> Number -> Map.Map Index Extension -> IO ()
+printMultiple tag n multMap =
+  forM_ (Map.toList multMap)
+    (\(i, ext) -> putStrLn $ "  * " ++ showFile tag n (Just i) ext)
 
 
 showFile :: Tag -> Number -> Maybe Index -> Extension -> String
