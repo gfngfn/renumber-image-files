@@ -1,5 +1,7 @@
 module Lib where
 
+import qualified Data.Ord
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified System.Directory as Dir
 import Control.Monad
@@ -13,7 +15,7 @@ getFileList :: IO ()
 getFileList = do
   fnames <- Dir.listDirectory "."
   finfos <- parseFileNames fnames
-  let (errs, _) = makeValidationMap finfos
+  let (errs, _) = makeValidationMap (List.sortOn Data.Ord.Down finfos)
   forM_ errs printError
 --  printFileList fnames
 
