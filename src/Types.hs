@@ -2,15 +2,19 @@ module Types where
 
 import qualified Data.Map.Strict as Map
 
+
 type Tag = String
 
-data Kind
-  = Single Int
-  | Multiple Int Int
-  deriving Show
+type Number = Int
+
+type Index = Int
 
 type Extension = String
 
-type FileInfo = (Tag, Int, Maybe Int, Extension)
+type FileInfo = (Tag, Number, Maybe Index, Extension)
 
-type TagMap = Map.Map Tag ()
+data Error
+  = SingleAlreadyExists   Tag Number Extension Index Extension
+  | MultipleAlreadyExists Tag Number (Map.Map Index Extension) Extension
+  | DuplicatedSingle      Tag Number Extension Extension
+  | DuplicatedMultiple    Tag Number Index Extension Extension

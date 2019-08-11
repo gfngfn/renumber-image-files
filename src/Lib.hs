@@ -5,6 +5,7 @@ import Control.Monad
 
 import Types
 import qualified FileNameParser
+import qualified TagMap
 
 
 getFileList :: IO ()
@@ -32,3 +33,16 @@ printFile fname =
 
     Nothing ->
       putStrLn ("  " ++ fname)
+
+
+makeValidationMap :: [FileInfo] -> ([Error], TagMap.TagMap)
+makeValidationMap files =
+  let
+    validateSingle :: ([Error], TagMap.TagMap) -> FileInfo -> ([Error], TagMap.TagMap)
+    validateSingle (errAcc, tagMap) file =
+      let (tag, n, iopt, ext) = file in
+      case TagMap.add tag n iopt ext tagMap of
+        Right tagMapNew -> (errAcc, tagMapNew)
+        Left err        -> (err : errAcc, tagMap)
+  in
+  foldl validateSingle ([], TagMap.empty) files

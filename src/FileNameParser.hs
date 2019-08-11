@@ -27,18 +27,18 @@ parseExtension =
   P.char '.' *> (P.many1 P.letter <* (P.string "_large" <|> P.string ""))
 
 
-parseIndex :: P.Parser (Maybe Int, Extension)
+parseIndex :: P.Parser (Maybe Index, Extension)
 parseIndex =
   p1 <|> p2
     where
-      p1 :: P.Parser (Maybe Int, Extension)
+      p1 :: P.Parser (Maybe Index, Extension)
       p1 = (\s -> (Nothing, s)) <$> parseExtension
 
-      p2 :: P.Parser (Maybe Int, Extension)
+      p2 :: P.Parser (Maybe Index, Extension)
       p2 = (\n s -> (Just n, s)) <$> (P.char '_' *> parseDigits 2) <*> parseExtension
 
 
-parseNumbering :: P.Parser (Char, Int, Maybe Int, Extension)
+parseNumbering :: P.Parser (Char, Number, Maybe Index, Extension)
 parseNumbering = do
   lastLetter <- P.letter
   number <- parseDigits 3
