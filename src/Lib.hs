@@ -97,19 +97,23 @@ printError err =
       let
         fname1 = showFile tag n Nothing ext1
         fname2 = showFile tag n Nothing ext2
-      in do
-        putStrLn $ "! duplication as to extension:"
-        putStrLn $ "  * " ++ fname1
-        putStrLn $ "  * " ++ fname2
+      in
+      mapM_ putStrLn
+        [ "! duplication as to extension:"
+        , "  * " ++ fname1
+        , "  * " ++ fname2
+        ]
 
     DuplicatedMultiple tag n i ext1 ext2 ->
       let
         fname1 = showFile tag n (Just i) ext1
         fname2 = showFile tag n (Just i) ext2
-      in do
-        putStrLn $ "! duplication as to extension:"
-        putStrLn $ "  * " ++ fname1
-        putStrLn $ "  * " ++ fname2
+      in
+      mapM_ putStrLn
+        [ "! duplication as to extension:"
+        , "  * " ++ fname1
+        , "  * " ++ fname2
+        ]
 
 
 printMultiple :: Tag -> Number -> Map.Map Index Extension -> IO ()
