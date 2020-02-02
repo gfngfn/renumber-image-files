@@ -2,13 +2,16 @@ module Types where
 
 import qualified Data.Map.Strict as Map
 
-
+-- The type for tags (that represent authors)
 type Tag = String
 
+-- The type for 1-origin numbers for (sets of) works
 type Number = Int
 
+-- The type for 1-origin indices within a set of works sharing the same number
 type Index = Int
 
+-- The type for filename extensions (e.g. ".jpg", ".png")
 type Extension = String
 
 newtype FileInfo = FileInfo (Tag, Number, Maybe Index, Extension)

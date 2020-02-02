@@ -16,13 +16,12 @@ getFileList = do
   fnames <- Dir.listDirectory "."
   finfos <- parseFileNames fnames
   let (errs, _) = makeValidationMap (List.sortOn Data.Ord.Down finfos)
-  forM_ errs printError
+  mapM_ printError errs
 --  printFileList fnames
 
 
 printFileList :: [String] -> IO ()
-printFileList fnames =
-  forM_ fnames printFile
+printFileList = mapM_ printFile
 
 
 printFile :: String -> IO ()
@@ -77,11 +76,13 @@ printError err =
       let
         fname1 = showFile tag n Nothing ext1
         fname2 = showFile tag n (Just i) ext2
-      in do
-        putStrLn $ "! There already exists a single:"
-        putStrLn $ "  * " ++ fname1
-        putStrLn $ "  and thus cannot validate:"
-        putStrLn $ "  * " ++ fname2
+      in
+      mapM_ putStrLn
+        [ "! There already exists a single:"
+        , "  * " ++ fname1
+        , "  and thus cannot validate:"
+        , "  * " ++ fname2
+        ]
 
     MultipleAlreadyExists tag n multMap ext2 ->
       let
