@@ -4,7 +4,6 @@ import qualified Data.Ord
 import qualified Data.List as List
 import qualified Data.Either as Either
 import qualified Data.Map.Strict as Map
-import qualified System.Directory as Dir
 import Control.Monad
 
 import Types
@@ -12,30 +11,13 @@ import qualified FileNameParser
 import qualified TagMap
 
 
-getFileList :: IO ()
-getFileList = do
-  fnames <- Dir.listDirectory "."
-  let (errs1, finfos) = Either.partitionEithers (List.map parseFileName fnames)
-  let (errs2, _) = makeValidationMap (List.sortOn Data.Ord.Down finfos)
-  mapM_ printError (errs1 ++ errs2)
---  printFileList fnames
-
-
-printFileList :: [String] -> IO ()
-printFileList = mapM_ printFile
-
-
-printFile :: String -> IO ()
-printFile fname =
-  case FileNameParser.parse fname of
-    Just (FileInfo (tag, n, iopt, ext)) ->
-      let
-        str = showFile tag n iopt ext
-      in
-      putStrLn $ "* " ++ fname ++ " (" ++ str ++ ")"
-
-    Nothing ->
-      putStrLn $ "  " ++ fname
+checkFileList :: [String] -> ([Error], Either [Error] TagMap.TagMap)
+checkFileList fnames = do
+  let (errsParse, finfos) = Either.partitionEithers (List.map parseFileName fnames)
+  let (errsDup, tagMap) = makeValidationMap (List.sortOn Data.Ord.Down finfos)
+  case errsDup of
+    []    -> (errsParse, Right tagMap)
+    _ : _ -> (errsParse, Left errsDup)
 
 
 parseFileName :: String -> Either Error FileInfo

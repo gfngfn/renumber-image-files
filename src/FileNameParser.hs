@@ -24,7 +24,7 @@ parseDigits i = do
 
 parseExtension :: P.Parser Extension
 parseExtension =
-  P.char '.' *> (P.many1 P.letter <* (P.string "_large" <|> P.string ""))
+  P.char '.' *> (P.many1 (P.letter <|> P.digit) <* (P.string "_large" <|> P.string ""))
 
 
 parseIndex :: P.Parser (Maybe Index, Extension)
