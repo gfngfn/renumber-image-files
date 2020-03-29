@@ -2,6 +2,7 @@ module Lib where
 
 import qualified Data.Ord
 import qualified Data.List as List
+import qualified Data.Either as Either
 import qualified Data.Map.Strict as Map
 import qualified System.Directory as Dir
 import Control.Monad
@@ -14,9 +15,9 @@ import qualified TagMap
 getFileList :: IO ()
 getFileList = do
   fnames <- Dir.listDirectory "."
-  finfos <- parseFileNames fnames
-  let (errs, _) = makeValidationMap (List.sortOn Data.Ord.Down finfos)
-  mapM_ printError errs
+  let (errs1, finfos) = Either.partitionEithers (List.map parseFileName fnames)
+  let (errs2, _) = makeValidationMap (List.sortOn Data.Ord.Down finfos)
+  mapM_ printError (errs1 ++ errs2)
 --  printFileList fnames
 
 
@@ -37,23 +38,11 @@ printFile fname =
       putStrLn $ "  " ++ fname
 
 
-parseFileNames :: [String] -> IO [FileInfo]
-parseFileNames fnames =
-  let
-    aux :: [FileInfo] -> [String] -> IO [FileInfo]
-    aux acc [] =
-      return $ reverse acc
-
-    aux acc (fname : fnametail) =
-      case FileNameParser.parse fname of
-        Just finfo ->
-          aux (finfo : acc) fnametail
-
-        Nothing -> do
-          putStrLn $ "! cannot parse '" ++ fname ++ "'"
-          aux acc fnametail
-  in
-  aux [] fnames
+parseFileName :: String -> Either Error FileInfo
+parseFileName fname =
+  case FileNameParser.parse fname of
+    Just finfo -> Right finfo
+    Nothing    -> Left (CannotParseFileName fname)
 
 
 makeValidationMap :: [FileInfo] -> ([Error], TagMap.TagMap)
@@ -66,12 +55,15 @@ makeValidationMap files =
         Right tagMapNew -> (errAcc, tagMapNew)
         Left err        -> (err : errAcc, tagMap)
   in
-  foldl validateSingle ([], TagMap.empty) files
+  List.foldl validateSingle ([], TagMap.empty) files
 
 
 printError :: Error -> IO ()
 printError err =
   case err of
+    CannotParseFileName fname ->
+      putStrLn $ "! Cannot parse '" ++ fname ++ "'"
+
     SingleAlreadyExists tag n ext1 i ext2 ->
       let
         fname1 = showFile tag n Nothing ext1
@@ -90,7 +82,7 @@ printError err =
       in do
         putStrLn $ "! There already exists a multiple:"
         printMultiple tag n multMap
-        putStrLn $ "and should rename:"
+        putStrLn $ "  and should rename:"
         putStrLn $ "  * " ++ fname2
 
     DuplicatedSingle tag n ext1 ext2 ->
@@ -99,7 +91,7 @@ printError err =
         fname2 = showFile tag n Nothing ext2
       in
       mapM_ putStrLn
-        [ "! duplication as to extension:"
+        [ "! Duplication as to extension:"
         , "  * " ++ fname1
         , "  * " ++ fname2
         ]
@@ -110,7 +102,7 @@ printError err =
         fname2 = showFile tag n (Just i) ext2
       in
       mapM_ putStrLn
-        [ "! duplication as to extension:"
+        [ "! Duplication as to extension:"
         , "  * " ++ fname1
         , "  * " ++ fname2
         ]

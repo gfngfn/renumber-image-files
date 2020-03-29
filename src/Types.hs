@@ -35,7 +35,8 @@ instance Ord FileInfo where
 
 
 data Error
-  = SingleAlreadyExists   Tag Number Extension Index Extension
+  = CannotParseFileName   String
+  | SingleAlreadyExists   Tag Number Extension Index Extension
   | MultipleAlreadyExists Tag Number (Map.Map Index Extension) Extension
   | DuplicatedSingle      Tag Number Extension Extension
   | DuplicatedMultiple    Tag Number Index Extension Extension
