@@ -38,5 +38,12 @@ addToMultipleMap tag n i ext multMap =
 
 
 getRenumberInfos :: IndexMap -> Number -> [RenumberInfo]
-getRenumberInfos (_tag, _numOld, _main) _numNew =
-  [] -- TODO
+getRenumberInfos (tag, numOld, main) numNew =
+  case main of
+    Single ext ->
+      [RenumberInfo (FileInfo (tag, numOld, Nothing, ext), numNew)]
+
+    Multiple multMap ->
+      Map.foldlWithKey
+        (\acc i ext -> RenumberInfo (FileInfo (tag, numOld, Just i, ext), numNew) : acc)
+        [] multMap
