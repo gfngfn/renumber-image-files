@@ -40,3 +40,6 @@ data Error
   | MultipleAlreadyExists Tag Number (Map.Map Index Extension) Extension
   | DuplicatedSingle      Tag Number Extension Extension
   | DuplicatedMultiple    Tag Number Index Extension Extension
+
+
+newtype RenumberInfo = RenumberInfo (FileInfo, Number)

@@ -8,23 +8,22 @@ import Types
 type IndexMap = (Tag, Number, IndexMapMain)
 
 data IndexMapMain
-  = Empty
-  | Single Extension
+  = Single Extension
   | Multiple MultipleMap
 
 type MultipleMap = Map.Map Index Extension
 
 
-empty :: Tag -> Number -> IndexMap
-empty tag n =
-  (tag, n, Empty)
+singleton :: Tag -> Number -> Maybe Index -> Extension -> IndexMap
+singleton tag n iopt ext =
+  case iopt of
+    Nothing -> (tag, n, Single ext)
+    Just i  -> (tag, n, Multiple (Map.singleton i ext))
 
 
 add :: Maybe Index -> Extension -> IndexMap -> Either Error IndexMap
 add iopt ext (tag, n, main) =
   case (main, iopt) of
-    (Empty, Nothing)            -> Right (tag, n, Single ext)
-    (Empty, Just i)             -> Right (tag, n, Multiple (Map.singleton i ext))
     (Single ext1, Just i)       -> Left (SingleAlreadyExists tag n ext1 i ext)
     (Single ext1, Nothing)      -> Left (DuplicatedSingle tag n ext1 ext)
     (Multiple multMap, Nothing) -> Left (MultipleAlreadyExists tag n multMap ext)
@@ -36,3 +35,8 @@ addToMultipleMap tag n i ext multMap =
   case Map.lookup i multMap of
     Nothing   -> Right (tag, n, Multiple (Map.insert i ext multMap))
     Just ext1 -> Left (DuplicatedMultiple tag n i ext1 ext)
+
+
+getRenumberInfos :: IndexMap -> Number -> [RenumberInfo]
+getRenumberInfos (_tag, _numOld, _main) _numNew =
+  [] -- TODO

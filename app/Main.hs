@@ -3,6 +3,7 @@ module Main where
 import qualified System.Directory as Dir
 
 import qualified Lib
+import qualified TagMap
 
 main :: IO ()
 main = do
@@ -13,6 +14,7 @@ main = do
       mapM_ Lib.printError (errsParse ++ errsDup)
       putStrLn "Conflicts of numbers should be fixed manually."
 
-    Right _tagMap -> do
+    Right tagMap -> do
       mapM_ Lib.printError errsParse
+      let (_renumInfos, _numNextMap) = TagMap.getRenumberInfos tagMap
       putStrLn "Success."
