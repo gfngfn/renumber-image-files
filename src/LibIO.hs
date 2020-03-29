@@ -1,7 +1,11 @@
 module LibIO where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.List as List
+import qualified Data.Char as Char
+import qualified Text.Printf as Printf
 import qualified System.Directory as Dir
+import System.FilePath
 import Control.Monad
 
 import Types
@@ -69,16 +73,47 @@ printMultiple tag n multMap =
 
 showFile :: Tag -> Number -> Maybe Index -> Extension -> String
 showFile tag n iopt ext =
-  let
-    istr =
-      case iopt of
-        Nothing -> ""
-        Just i  -> ":" ++ show i
-  in
-  tag ++ "[" ++ show n ++ istr ++ "]." ++ ext
+  tag ++ showNumber n ++ showIndex iopt ++ "." ++ ext
 
 
-printRenumberInfo :: RenumberInfo -> IO ()
-printRenumberInfo renumInfo =
-  let RenumberInfo (FileInfo (tag, numOld, iopt, ext), numNew) = renumInfo in
-  putStrLn $ showFile tag numOld iopt ext ++ " ---> " ++ show numNew
+showNumber :: Number -> String
+showNumber =
+  Printf.printf "%03d"
+
+
+showIndex :: Maybe Index -> String
+showIndex Nothing  = ""
+showIndex (Just i) = Printf.printf "_%02d" i
+
+
+normalizeExtension :: Extension -> Extension
+normalizeExtension ext =
+  let extLower = List.map Char.toLower ext in
+  case extLower of
+    "jpeg" -> "jpg"
+    "jpe"  -> "jpg"
+    _      -> extLower
+
+
+renameSafely :: FilePath -> FilePath -> IO ()
+renameSafely fpathOld fpathNew = do
+  exists <- Dir.doesFileExist fpathNew
+  if exists then
+    putStrLn $ "! (from '" ++ fpathOld ++ "') '" ++ fpathNew ++ "' already exists."
+  else do
+    putStrLn $ fpathOld ++ " ---> " ++ fpathNew
+    Dir.renameFile fpathOld fpathNew
+
+
+performRenumbering :: FilePath -> RenumberInfo -> IO ()
+performRenumbering dir renumInfo =
+  let RenumberInfo (FileInfo (tag, numOld, iopt, extOld), numNew) = renumInfo in
+  let extNew = normalizeExtension extOld in
+  let fnameOld = showFile tag numOld iopt extOld in
+  let fnameNew = showFile tag numNew iopt extNew in
+  let fpathOld = dir </> fnameOld in
+  let fpathNew = dir </> fnameNew in
+  if numOld == numNew && extOld == extNew then
+    putStrLn $ fpathOld ++ " (unchanged)"
+  else
+    renameSafely fpathOld fpathNew
