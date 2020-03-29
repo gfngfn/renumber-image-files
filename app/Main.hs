@@ -16,5 +16,6 @@ main = do
 
     Right tagMap -> do
       mapM_ Lib.printError errsParse
-      let (_renumInfos, _numNextMap) = TagMap.getRenumberInfos tagMap
+      let (renumInfos, _numNextMap) = TagMap.getRenumberInfos tagMap
       putStrLn "Success."
+      mapM_ Lib.printRenumberInfo renumInfos

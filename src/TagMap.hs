@@ -38,4 +38,4 @@ getRenumberInfos tagMap =
            (infos : acc, Map.insert tag numNext mapacc))
         ([], Map.empty) tagMap
   in
-  (List.concat infoss, numNextMap)
+  (List.reverse (List.concat infoss), numNextMap)

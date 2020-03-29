@@ -105,3 +105,9 @@ showFile tag n iopt ext =
         Just i  -> ":" ++ show i
   in
   tag ++ "[" ++ show n ++ istr ++ "]." ++ ext
+
+
+printRenumberInfo :: RenumberInfo -> IO ()
+printRenumberInfo renumInfo =
+  let RenumberInfo (FileInfo (tag, numOld, iopt, ext), numNew) = renumInfo in
+  putStrLn $ showFile tag numOld iopt ext ++ " ---> " ++ show numNew
