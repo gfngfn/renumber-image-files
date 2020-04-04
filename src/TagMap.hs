@@ -2,14 +2,13 @@ module TagMap where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.List as List
+import qualified Data.Maybe as Maybe
 
 import Types
 import qualified NumberMap
 
 
 type TagMap = Map.Map Tag NumberMap.NumberMap
-
-type NextNumberMap = Map.Map Tag Number
 
 
 empty :: TagMap
@@ -28,13 +27,14 @@ add tag n iopt ext tagMap =
       return (Map.insert tag numberMapNew tagMap)
 
 
-getRenumberInfos :: TagMap -> ([RenumberInfo], NextNumberMap)
-getRenumberInfos tagMap =
+getRenumberInfos :: NextNumberMap -> TagMap -> ([RenumberInfo], NextNumberMap)
+getRenumberInfos preMap tagMap =
   let
     (infoss, numNextMap) =
       Map.foldlWithKey
         (\(acc, mapacc) tag numMap ->
-           let (infos, numNext) = NumberMap.getRenumberInfos numMap in
+           let numPrev = Maybe.fromMaybe 1 (Map.lookup tag preMap) in
+           let (infos, numNext) = NumberMap.getRenumberInfos numPrev numMap in
            (infos : acc, Map.insert tag numNext mapacc))
         ([], Map.empty) tagMap
   in

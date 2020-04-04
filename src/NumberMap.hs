@@ -27,14 +27,14 @@ add n iopt ext (tag, mapMain) =
       Right (tag, Map.insert n indexMapNew mapMain)
 
 
-getRenumberInfos :: NumberMap -> ([RenumberInfo], Number)
-getRenumberInfos (_tag, mapMain) =
+getRenumberInfos :: Number -> NumberMap -> ([RenumberInfo], Number)
+getRenumberInfos numPrev (_tag, mapMain) =
   let
     (numNext, renumberInfos) =
       Map.foldl
         (\(numNew, acc) indexMap ->
            let infos = IndexMap.getRenumberInfos indexMap numNew in
            ((numNew :: Int) + 1, infos : acc))
-        (1, []) mapMain
+        (numPrev, []) mapMain
   in
   (List.concat renumberInfos, numNext)

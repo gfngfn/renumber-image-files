@@ -5,14 +5,16 @@ import qualified Data.List as List
 import qualified Data.Char as Char
 import qualified Text.Printf as Printf
 import qualified System.Directory as Dir
-import System.FilePath
+import System.FilePath  -- in order to use </>
 import Control.Monad
 
 import Types
 
 
-listDirectory :: String -> IO [String]
-listDirectory = Dir.listDirectory
+listFiles :: FilePath -> IO [String]
+listFiles dir = do
+  contents <- Dir.listDirectory dir
+  filterM (\content -> Dir.doesFileExist (dir </> content)) contents
 
 
 printError :: Error -> IO ()
@@ -102,18 +104,19 @@ renameSafely fpathOld fpathNew = do
     putStrLn $ "! (from '" ++ fpathOld ++ "') '" ++ fpathNew ++ "' already exists."
   else do
     putStrLn $ fpathOld ++ " ---> " ++ fpathNew
-    Dir.renameFile fpathOld fpathNew
+    -- Dir.renameFile fpathOld fpathNew
 
 
-performRenumbering :: FilePath -> RenumberInfo -> IO ()
-performRenumbering dir renumInfo =
+performRenumbering :: FilePath -> FilePath -> RenumberInfo -> IO ()
+performRenumbering dirFrom dirTo renumInfo =
   let RenumberInfo (FileInfo (tag, numOld, iopt, extOld), numNew) = renumInfo in
   let extNew = normalizeExtension extOld in
   let fnameOld = showFile tag numOld iopt extOld in
   let fnameNew = showFile tag numNew iopt extNew in
-  let fpathOld = dir </> fnameOld in
-  let fpathNew = dir </> fnameNew in
+  let fpathOld = dirFrom </> fnameOld in
+  let fpathNew = dirTo </> fnameNew in
   if numOld == numNew && extOld == extNew then
     putStrLn $ fpathOld ++ " (unchanged)"
+    -- return ()
   else
     renameSafely fpathOld fpathNew

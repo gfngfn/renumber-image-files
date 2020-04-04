@@ -43,3 +43,5 @@ data Error
 
 
 newtype RenumberInfo = RenumberInfo (FileInfo, Number)
+
+type NextNumberMap = Map.Map Tag Number
