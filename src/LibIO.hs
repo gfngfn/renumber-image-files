@@ -115,7 +115,7 @@ performRenumbering dirFrom dirTo renumInfo =
   let fnameNew = showFile tag numNew iopt extNew in
   let fpathOld = dirFrom </> fnameOld in
   let fpathNew = dirTo </> fnameNew in
-  if numOld == numNew && extOld == extNew then
+  if dirFrom == dirTo && numOld == numNew && extOld == extNew then
     putStrLn $ fpathOld ++ " (unchanged)"
     -- return ()
   else

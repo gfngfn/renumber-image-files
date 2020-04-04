@@ -1,9 +1,12 @@
 module Main where
 
-import System.Directory as Dir
-import System.Environment as Environment
-import Data.List as List
-import Data.Map.Strict as Map
+import qualified System.Directory as Dir
+import qualified System.FilePath.Posix as Posix
+import qualified System.Environment as Environment
+import qualified Data.List as List
+import qualified Data.Map.Strict as Map
+
+import System.FilePath  -- in order to use </>
 
 import Types
 import qualified Lib
@@ -13,12 +16,14 @@ import qualified TagMap
 
 data Mode
   = DryRun FilePath
+  | Normalize FilePath
   | Run FilePath FilePath
   | Invalid
 
 
 parseArgs :: [String] -> Mode
 parseArgs ["--check", dir]                = DryRun dir
+parseArgs ["--normalize", dir]            = Normalize dir
 parseArgs ["--run", dirSource, dirTarget] = Run dirSource dirTarget
 parseArgs _                               = Invalid
 
@@ -40,32 +45,53 @@ traverseDirectory numPrevMap dir = do
       return $ Right (renumInfos, numNextMap)
 
 
+makePathAbsolute :: FilePath -> FilePath -> FilePath
+makePathAbsolute dirCurrent dir =
+  if Posix.isRelative dir then dirCurrent </> dir else dir
+
+
 main :: IO ()
 main = do
+  dirCurrent <- Dir.getCurrentDirectory
   args <- Environment.getArgs
   case parseArgs args of
     Invalid ->
       putStrLn "invalid command line arguments."
 
-    DryRun dir -> do
+    DryRun dir0 -> do
+      let dir = makePathAbsolute dirCurrent dir0
+      putStrLn $ "Traversing '" ++ dir ++ "' ..."
       _ <- traverseDirectory Map.empty dir
       return ()
 
-    Run dirSource dirTarget -> do
+    Normalize dir0 -> do
+      let dir = makePathAbsolute dirCurrent dir0
+      putStrLn $ "Traversing '" ++ dir ++ "' ..."
+      res <- traverseDirectory Map.empty dir
+      case res of
+        Left () ->
+          putStrLn "Found errors in the directory. Stop."
+
+        Right (renumInfos, _) -> do
+          putStrLn $ "Renaming " ++ show (List.length renumInfos) ++ " files ..."
+          mapM_ (LibIO.performRenumbering dir dir) renumInfos
+          putStrLn "End."
+
+    Run dirSource0 dirTarget0 -> do
+      let dirSource = makePathAbsolute dirCurrent dirSource0
+      let dirTarget = makePathAbsolute dirCurrent dirTarget0
       putStrLn $ "Traversing the target directory '" ++ dirTarget ++ "' ..."
       resTarget <- traverseDirectory Map.empty dirTarget
       case resTarget of
-        Left () -> do
+        Left () ->
           putStrLn "Found errors in the target directory. Stop."
-          return ()
 
         Right (renumInfosTarget, numNextMap) -> do
           putStrLn $ "Traversing the source directory '" ++ dirSource ++ "' ..."
           resSource <- traverseDirectory numNextMap dirSource
           case resSource of
-            Left () -> do
+            Left () ->
               putStrLn "Found errors in the source directory. Stop."
-              return ()
 
             Right (renumInfosSource, _) -> do
               putStrLn $ "Renaming " ++ show (List.length renumInfosSource) ++ " files ..."
