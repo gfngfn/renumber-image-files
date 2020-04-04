@@ -104,7 +104,7 @@ renameSafely fpathOld fpathNew = do
     putStrLn $ "! (from '" ++ fpathOld ++ "') '" ++ fpathNew ++ "' already exists."
   else do
     putStrLn $ fpathOld ++ " ---> " ++ fpathNew
-    -- Dir.renameFile fpathOld fpathNew
+    Dir.renameFile fpathOld fpathNew
 
 
 performRenumbering :: FilePath -> FilePath -> RenumberInfo -> IO ()
@@ -116,7 +116,7 @@ performRenumbering dirFrom dirTo renumInfo =
   let fpathOld = dirFrom </> fnameOld in
   let fpathNew = dirTo </> fnameNew in
   if dirFrom == dirTo && numOld == numNew && extOld == extNew then
-    putStrLn $ fpathOld ++ " (unchanged)"
-    -- return ()
+    -- putStrLn $ fpathOld ++ " (unchanged)"
+    return ()
   else
     renameSafely fpathOld fpathNew
