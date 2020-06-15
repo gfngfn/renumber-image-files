@@ -17,6 +17,7 @@ import qualified TagMap
 data Mode
   = DryRun FilePath
   | Normalize FilePath
+  | SumUp FilePath
   | Run FilePath FilePath
   | Invalid
 
@@ -24,6 +25,7 @@ data Mode
 parseArgs :: [String] -> Mode
 parseArgs ["--check", dir]                = DryRun dir
 parseArgs ["--normalize", dir]            = Normalize dir
+parseArgs ["--sum-up", dir]               = SumUp dir
 parseArgs ["--run", dirSource, dirTarget] = Run dirSource dirTarget
 parseArgs _                               = Invalid
 
@@ -63,6 +65,20 @@ main = do
       putStrLn $ "Traversing '" ++ dir ++ "' ..."
       _ <- traverseDirectory Map.empty dir
       return ()
+
+    SumUp dir0 -> do
+      let dir = makePathAbsolute dirCurrent dir0
+      putStrLn $ "Traversing '" ++ dir ++ "' ..."
+      res <- traverseDirectory Map.empty dir
+      case res of
+        Left () ->
+          putStrLn "Found errors in the directory. Stop."
+
+        Right (_, numNextMap) ->
+          let numAssoc = List.sortBy (\(_, n1) (_, n2) -> compare n2 n1) (Map.toList numNextMap) in
+          mapM_ (\(tag, num) ->
+            putStrLn $ "* " ++ tag ++ ": " ++ show (num - 1)
+          ) numAssoc
 
     Normalize dir0 -> do
       let dir = makePathAbsolute dirCurrent dir0
