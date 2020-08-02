@@ -42,14 +42,14 @@ defaultMode =
 
 
 parseArgs :: ParsedMode -> [String] -> ParsedMode
-parseArgs parsedMode []                                            = parsedMode
-parseArgs (Nothing, opts) ("--check" : dir : tail)                 = parseArgs (Just (DryRun dir), opts) tail
-parseArgs (Nothing, opts) ("--normalize" : dir : tail)             = parseArgs (Just (Normalize dir), opts) tail
-parseArgs (Nothing, opts) ("--sum-up" : dir : tail)                = parseArgs (Just (SumUp dir), opts) tail
-parseArgs (Nothing, opts) ("--run" : dirSource : dirTarget : tail) = parseArgs (Just (Run dirSource dirTarget), opts) tail
-parseArgs (maybeMode, opts) ("--concise" : tail)                   = parseArgs (maybeMode, opts { verbose = False }) tail
-parseArgs (maybeMode, opts) ("--do" : tail)                        = parseArgs (maybeMode, opts { safe = False }) tail
-parseArgs (_, opts) _                                              = (Nothing, opts)
+parseArgs maybeMode []                                           = maybeMode
+parseArgs (Nothing, opts) ("--check" : dir : xs)                 = parseArgs (Just (DryRun dir), opts) xs
+parseArgs (Nothing, opts) ("--normalize" : dir : xs)             = parseArgs (Just (Normalize dir), opts) xs
+parseArgs (Nothing, opts) ("--sum-up" : dir : xs)                = parseArgs (Just (SumUp dir), opts) xs
+parseArgs (Nothing, opts) ("--run" : dirSource : dirTarget : xs) = parseArgs (Just (Run dirSource dirTarget), opts) xs
+parseArgs (maybeMode, opts) ("--concise" : xs)                   = parseArgs (maybeMode, opts { verbose = False }) xs
+parseArgs (maybeMode, opts) ("--do" : xs)                        = parseArgs (maybeMode, opts { safe = False }) xs
+parseArgs (_, opts) _                                            = (Nothing, opts)
 
 
 traverseDirectory :: Options -> NextNumberMap -> FilePath -> IO (Either () ([RenumberInfo], NextNumberMap))
@@ -135,7 +135,7 @@ main = do
 
             Right (renumInfosSource, _) -> do
               let numFiles = List.length renumInfosSource
-              if numFiles >= 100 && safe opts then
+              if numFiles > 100 && safe opts then
                 putStrLn $ "Will perform remaning " ++ show numFiles ++ " files; rerun with --do option for renaming more than 100 files. Stop."
               else do
                 putStrLn $ "Renaming " ++ show numFiles ++ " files ..."
