@@ -14,26 +14,49 @@ import qualified LibIO
 import qualified TagMap
 
 
+data Options = Options
+  { verbose :: Bool
+  , safe    :: Bool
+  }
+
+
 data Mode
   = DryRun FilePath
   | Normalize FilePath
   | SumUp FilePath
   | Run FilePath FilePath
-  | Invalid
 
 
-parseArgs :: [String] -> Mode
-parseArgs ["--check", dir]                = DryRun dir
-parseArgs ["--normalize", dir]            = Normalize dir
-parseArgs ["--sum-up", dir]               = SumUp dir
-parseArgs ["--run", dirSource, dirTarget] = Run dirSource dirTarget
-parseArgs _                               = Invalid
+type ParsedMode = (Maybe Mode, Options)
 
 
-traverseDirectory :: NextNumberMap -> FilePath -> IO (Either () ([RenumberInfo], NextNumberMap))
-traverseDirectory numPrevMap dir = do
+defaultMode :: ParsedMode
+defaultMode =
+  let
+    opts = Options
+      { verbose = True
+      , safe    = True
+      }
+  in
+  (Nothing, opts)
+
+
+parseArgs :: ParsedMode -> [String] -> ParsedMode
+parseArgs parsedMode []                                            = parsedMode
+parseArgs (Nothing, opts) ("--check" : dir : tail)                 = parseArgs (Just (DryRun dir), opts) tail
+parseArgs (Nothing, opts) ("--normalize" : dir : tail)             = parseArgs (Just (Normalize dir), opts) tail
+parseArgs (Nothing, opts) ("--sum-up" : dir : tail)                = parseArgs (Just (SumUp dir), opts) tail
+parseArgs (Nothing, opts) ("--run" : dirSource : dirTarget : tail) = parseArgs (Just (Run dirSource dirTarget), opts) tail
+parseArgs (maybeMode, opts) ("--concise" : tail)                   = parseArgs (maybeMode, opts { verbose = False }) tail
+parseArgs (maybeMode, opts) ("--do" : tail)                        = parseArgs (maybeMode, opts { safe = False }) tail
+parseArgs (_, opts) _                                              = (Nothing, opts)
+
+
+traverseDirectory :: Options -> NextNumberMap -> FilePath -> IO (Either () ([RenumberInfo], NextNumberMap))
+traverseDirectory opts numPrevMap dir = do
   fnames <- LibIO.listFiles dir
-  let (errsParse, res) = Lib.checkFileList fnames
+  let (errsParseOriginal, res) = Lib.checkFileList fnames
+  let errsParse = if verbose opts then errsParseOriginal else []
   case res of
     Left errsDup -> do
       mapM_ LibIO.printError (errsParse ++ errsDup)
@@ -56,20 +79,21 @@ main :: IO ()
 main = do
   dirCurrent <- Dir.getCurrentDirectory
   args <- Environment.getArgs
-  case parseArgs args of
-    Invalid ->
+  let (maybeMode, opts) = parseArgs defaultMode args
+  case maybeMode of
+    Nothing ->
       putStrLn "invalid command line arguments."
 
-    DryRun dir0 -> do
+    Just (DryRun dir0) -> do
       let dir = makePathAbsolute dirCurrent dir0
       putStrLn $ "Traversing '" ++ dir ++ "' ..."
-      _ <- traverseDirectory Map.empty dir
+      _ <- traverseDirectory opts Map.empty dir
       return ()
 
-    SumUp dir0 -> do
+    Just (SumUp dir0) -> do
       let dir = makePathAbsolute dirCurrent dir0
       putStrLn $ "Traversing '" ++ dir ++ "' ..."
-      res <- traverseDirectory Map.empty dir
+      res <- traverseDirectory opts Map.empty dir
       case res of
         Left () ->
           putStrLn "Found errors in the directory. Stop."
@@ -80,10 +104,10 @@ main = do
             putStrLn $ "* " ++ tag ++ ": " ++ show (num - 1)
           ) numAssoc
 
-    Normalize dir0 -> do
+    Just (Normalize dir0) -> do
       let dir = makePathAbsolute dirCurrent dir0
       putStrLn $ "Traversing '" ++ dir ++ "' ..."
-      res <- traverseDirectory Map.empty dir
+      res <- traverseDirectory opts Map.empty dir
       case res of
         Left () ->
           putStrLn "Found errors in the directory. Stop."
@@ -93,24 +117,28 @@ main = do
           mapM_ (LibIO.performRenumbering dir dir) renumInfos
           putStrLn "End."
 
-    Run dirSource0 dirTarget0 -> do
+    Just (Run dirSource0 dirTarget0) -> do
       let dirSource = makePathAbsolute dirCurrent dirSource0
       let dirTarget = makePathAbsolute dirCurrent dirTarget0
       putStrLn $ "Traversing the target directory '" ++ dirTarget ++ "' ..."
-      resTarget <- traverseDirectory Map.empty dirTarget
+      resTarget <- traverseDirectory opts Map.empty dirTarget
       case resTarget of
         Left () ->
           putStrLn "Found errors in the target directory. Stop."
 
         Right (renumInfosTarget, numNextMap) -> do
           putStrLn $ "Traversing the source directory '" ++ dirSource ++ "' ..."
-          resSource <- traverseDirectory numNextMap dirSource
+          resSource <- traverseDirectory opts numNextMap dirSource
           case resSource of
             Left () ->
               putStrLn "Found errors in the source directory. Stop."
 
             Right (renumInfosSource, _) -> do
-              putStrLn $ "Renaming " ++ show (List.length renumInfosSource) ++ " files ..."
-              mapM_ (LibIO.performRenumbering dirTarget dirTarget) renumInfosTarget
-              mapM_ (LibIO.performRenumbering dirSource dirTarget) renumInfosSource
-              putStrLn "End."
+              let numFiles = List.length renumInfosSource
+              if numFiles >= 100 && safe opts then
+                putStrLn $ "Will perform remaning " ++ show numFiles ++ " files; rerun with --do option for renaming more than 100 files. Stop."
+              else do
+                putStrLn $ "Renaming " ++ show numFiles ++ " files ..."
+                mapM_ (LibIO.performRenumbering dirTarget dirTarget) renumInfosTarget
+                mapM_ (LibIO.performRenumbering dirSource dirTarget) renumInfosSource
+                putStrLn "End."
