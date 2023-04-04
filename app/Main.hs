@@ -23,7 +23,8 @@ data Options = Options
 
 
 data Mode
-  = DryRun FilePath
+  = ShowHelp
+  | DryRun FilePath
   | Normalize FilePath
   | SumUp FilePath
   | Run (Maybe (Set.Set String)) FilePath FilePath
@@ -45,6 +46,7 @@ defaultMode =
 
 parseArgs :: ParsedMode -> [String] -> ParsedMode
 parseArgs maybeMode []                               = maybeMode
+parseArgs (Nothing, opts) ("--help" : xs)            = parseArgs (Just ShowHelp, opts) xs
 parseArgs (Nothing, opts) ("--check" : dir : xs)     = parseArgs (Just (DryRun dir), opts) xs
 parseArgs (Nothing, opts) ("--normalize" : dir : xs) = parseArgs (Just (Normalize dir), opts) xs
 parseArgs (Nothing, opts) ("--sum-up" : dir : xs)    = parseArgs (Just (SumUp dir), opts) xs
@@ -84,14 +86,30 @@ makePathAbsolute dirCurrent dir =
   if Posix.isRelative dir then dirCurrent </> dir else dir
 
 
+printHelp :: IO ()
+printHelp = do
+  putStrLn "* renum-files-exe --check DIR"
+  putStrLn "* renum-files-exe --normalize DIR"
+  putStrLn "* renum-files-exe --sum-up DIR"
+  putStrLn "* renum-files-exe --run SOURCE TARGET"
+  putStrLn "* renum-files-exe --run-only PREFIX SOURCE TARGET"
+  putStrLn "Options:"
+  putStrLn "* --concise"
+  putStrLn "* --do (execute renaming for more than 100 files)"
+
+
 main :: IO ()
 main = do
   dirCurrent <- Dir.getCurrentDirectory
   args <- Environment.getArgs
   let (maybeMode, opts) = parseArgs defaultMode args
   case maybeMode of
-    Nothing ->
-      putStrLn "invalid command line arguments."
+    Nothing -> do
+      putStrLn "Invalid command line arguments. Usage:"
+      printHelp
+
+    Just ShowHelp ->
+      printHelp
 
     Just (DryRun dir0) -> do
       let dir = makePathAbsolute dirCurrent dir0
