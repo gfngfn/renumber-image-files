@@ -27,23 +27,35 @@ parseExtension =
   P.char '.' *> (P.many1 (P.letter <|> P.digit) <* (P.string "_large" <|> P.string ""))
 
 
-parseIndex :: P.Parser (Maybe Index, Extension)
+parseClasses :: P.Parser ([Class], Extension)
+parseClasses =
+  p1 <|> p2
+    where
+      p1 = (\ext -> ([], ext)) <$> parseExtension
+
+      p2 = (,) <$> (P.string "__" *> (P.sepBy1 pClass pSep)) <*> parseExtension
+        where
+          pClass = P.many1 P.letter
+          pSep = P.char '_'
+
+
+parseIndex :: P.Parser (Maybe Index, [Class], Extension)
 parseIndex =
   p1 <|> p2
     where
-      p1 :: P.Parser (Maybe Index, Extension)
-      p1 = (\s -> (Nothing, s)) <$> parseExtension
+      p1 = do
+        (classes, ext) <- parseClasses
+        pure (Nothing, classes, ext)
 
-      p2 :: P.Parser (Maybe Index, Extension)
-      p2 = (\n s -> (Just n, s)) <$> (P.char '_' *> parseDigits 2) <*> parseExtension
+      p2 = (\n (classes, ext) -> (Just n, classes, ext)) <$> (P.char '_' *> parseDigits 2) <*> parseClasses
 
 
-parseNumbering :: P.Parser (Char, Number, Maybe Index, Extension)
+parseNumbering :: P.Parser (Char, Number, Maybe Index, [Class], Extension)
 parseNumbering = do
   lastLetter <- P.letter
   number <- parseDigits 3
-  (maybeIndex, ext) <- parseIndex
-  return (lastLetter, number, maybeIndex, ext)
+  (maybeIndex, classes, ext) <- parseIndex
+  return (lastLetter, number, maybeIndex, classes, ext)
 
 
 parseFileName :: P.Parser FileInfo
@@ -55,7 +67,9 @@ parseFileName =
         pLast <|> pMiddle
           where
             pLast :: P.Parser FileInfo
-            pLast = (\(c, n, i, ext) -> FileInfo (sacc ++ [c], n, i, ext)) <$> parseNumbering
+            pLast = do
+              (c, n, i, classes, ext) <- parseNumbering
+              pure $ FileInfo (sacc ++ [c], n, i, classes, ext)
 
             pMiddle :: P.Parser FileInfo
             pMiddle = do

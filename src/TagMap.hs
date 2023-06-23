@@ -15,15 +15,15 @@ empty :: TagMap
 empty = Map.empty
 
 
-add :: Tag -> Number -> Maybe Index -> Extension -> TagMap -> Either Error TagMap
-add tag n iopt ext tagMap =
+add :: Tag -> Number -> Maybe Index -> ([Class], Extension) -> TagMap -> Either Error TagMap
+add tag n iopt classAndExt tagMap =
   case Map.lookup tag tagMap of
     Nothing -> do
-      numberMap <- NumberMap.add n iopt ext (NumberMap.empty tag)
+      numberMap <- NumberMap.add n iopt classAndExt (NumberMap.empty tag)
       return (Map.insert tag numberMap tagMap)
 
     Just numberMap -> do
-      numberMapNew <- NumberMap.add n iopt ext numberMap
+      numberMapNew <- NumberMap.add n iopt classAndExt numberMap
       return (Map.insert tag numberMapNew tagMap)
 
 

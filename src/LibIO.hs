@@ -23,10 +23,10 @@ printError err =
     CannotParseFileName fname ->
       putStrLn $ "! Cannot parse '" ++ fname ++ "'"
 
-    SingleAlreadyExists tag n ext1 i ext2 ->
+    SingleAlreadyExists tag n classAndExt1 i classAndExt2 ->
       let
-        fname1 = showFile tag n Nothing ext1
-        fname2 = showFile tag n (Just i) ext2
+        fname1 = showFile tag n Nothing classAndExt1
+        fname2 = showFile tag n (Just i) classAndExt2
       in
       mapM_ putStrLn
         [ "! There already exists a single:"
@@ -35,19 +35,19 @@ printError err =
         , "  * " ++ fname2
         ]
 
-    MultipleAlreadyExists tag n multMap ext2 ->
+    MultipleAlreadyExists tag n multMap classAndExt2 ->
       let
-        fname2 = showFile tag n Nothing ext2
+        fname2 = showFile tag n Nothing classAndExt2
       in do
         putStrLn $ "! There already exists a multiple:"
         printMultiple tag n multMap
         putStrLn $ "  and should rename:"
         putStrLn $ "  * " ++ fname2
 
-    DuplicatedSingle tag n ext1 ext2 ->
+    DuplicatedSingle tag n classAndExt1 classAndExt2 ->
       let
-        fname1 = showFile tag n Nothing ext1
-        fname2 = showFile tag n Nothing ext2
+        fname1 = showFile tag n Nothing classAndExt1
+        fname2 = showFile tag n Nothing classAndExt2
       in
       mapM_ putStrLn
         [ "! Duplication as to extension:"
@@ -55,10 +55,10 @@ printError err =
         , "  * " ++ fname2
         ]
 
-    DuplicatedMultiple tag n i ext1 ext2 ->
+    DuplicatedMultiple tag n i classAndExt1 classAndExt2 ->
       let
-        fname1 = showFile tag n (Just i) ext1
-        fname2 = showFile tag n (Just i) ext2
+        fname1 = showFile tag n (Just i) classAndExt1
+        fname2 = showFile tag n (Just i) classAndExt2
       in
       mapM_ putStrLn
         [ "! Duplication as to extension:"
@@ -67,15 +67,15 @@ printError err =
         ]
 
 
-printMultiple :: Tag -> Number -> Map.Map Index Extension -> IO ()
+printMultiple :: Tag -> Number -> Map.Map Index ([Class], Extension) -> IO ()
 printMultiple tag n multMap =
   forM_ (Map.toList multMap)
-    (\(i, ext) -> putStrLn $ "  * " ++ showFile tag n (Just i) ext)
+    (\(i, classAndExt) -> putStrLn $ "  * " ++ showFile tag n (Just i) classAndExt)
 
 
-showFile :: Tag -> Number -> Maybe Index -> Extension -> String
-showFile tag n iopt ext =
-  tag ++ showNumber n ++ showIndex iopt ++ "." ++ ext
+showFile :: Tag -> Number -> Maybe Index -> ([Class], Extension) -> String
+showFile tag n iopt (classes, ext) =
+  tag ++ showNumber n ++ showIndex iopt ++ showClasses classes ++ "." ++ ext
 
 
 showNumber :: Number -> String
@@ -86,6 +86,11 @@ showNumber =
 showIndex :: Maybe Index -> String
 showIndex Nothing  = ""
 showIndex (Just i) = Printf.printf "_%02d" i
+
+
+showClasses :: [Class] -> String
+showClasses [] = ""
+showClasses classes = "__" ++ List.intercalate "_" classes
 
 
 normalizeExtension :: Extension -> Extension
@@ -109,10 +114,10 @@ renameSafely fpathOld fpathNew = do
 
 performRenumbering :: FilePath -> FilePath -> RenumberInfo -> IO ()
 performRenumbering dirFrom dirTo renumInfo =
-  let RenumberInfo (FileInfo (tag, numOld, iopt, extOld), numNew) = renumInfo in
+  let RenumberInfo (FileInfo (tag, numOld, iopt, classes, extOld), numNew) = renumInfo in
   let extNew = normalizeExtension extOld in
-  let fnameOld = showFile tag numOld iopt extOld in
-  let fnameNew = showFile tag numNew iopt extNew in
+  let fnameOld = showFile tag numOld iopt (classes, extOld) in
+  let fnameNew = showFile tag numNew iopt (classes, extNew) in
   let fpathOld = dirFrom </> fnameOld in
   let fpathNew = dirTo </> fnameNew in
   if dirFrom == dirTo && numOld == numNew && extOld == extNew then

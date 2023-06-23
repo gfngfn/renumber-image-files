@@ -40,9 +40,9 @@ makeValidationMap isNeededTag files =
   let
     validateSingle :: ([Error], TagMap.TagMap) -> FileInfo -> ([Error], TagMap.TagMap)
     validateSingle (errAcc, tagMap) finfo =
-      let FileInfo (tag, n, iopt, ext) = finfo in
+      let FileInfo (tag, n, iopt, classes, ext) = finfo in
       if isNeededTag tag then
-        case TagMap.add tag n iopt ext tagMap of
+        case TagMap.add tag n iopt (classes, ext) tagMap of
           Right tagMapNew -> (errAcc, tagMapNew)
           Left err        -> (err : errAcc, tagMap)
       else
