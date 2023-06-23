@@ -32,6 +32,7 @@ resolver: lts-12.21
 #  subdirs:
 #  - auto-update
 #  - wai
+resolver: lts-21.0
 packages:
 - .
 # Dependency packages to be pulled from upstream that are not in the resolver
