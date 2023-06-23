@@ -14,7 +14,7 @@ type Index = Int
 -- Type type for texts for classification
 type Class = String
 
--- The type for filename extensions (e.g. ".jpg", ".png")
+-- The type for filename extensions (e.g. "jpg", "png")
 type Extension = String
 
 newtype FileInfo = FileInfo (Tag, Number, Maybe Index, [Class], Extension)
