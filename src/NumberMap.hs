@@ -15,15 +15,15 @@ empty tag =
   (tag, Map.empty)
 
 
-add :: Number -> Maybe Index -> Extension -> NumberMap -> Either Error NumberMap
-add n iopt ext (tag, mapMain) =
+add :: Number -> Maybe Index -> ([Class], Extension) -> NumberMap -> Either Error NumberMap
+add n iopt classAndExt (tag, mapMain) =
   case Map.lookup n mapMain of
     Nothing -> do
-      let indexMap = IndexMap.singleton tag n iopt ext
+      let indexMap = IndexMap.singleton tag n iopt classAndExt
       Right (tag, Map.insert n indexMap mapMain)
 
     Just indexMap -> do
-      indexMapNew <- IndexMap.add iopt ext indexMap
+      indexMapNew <- IndexMap.add iopt classAndExt indexMap
       Right (tag, Map.insert n indexMapNew mapMain)
 
 
