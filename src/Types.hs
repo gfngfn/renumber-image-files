@@ -1,6 +1,7 @@
 module Types where
 
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict (Map)
+import Data.Set (Set)
 
 -- The type for tags (that represent authors)
 type Tag = String
@@ -17,17 +18,18 @@ type Class = String
 -- The type for filename extensions (e.g. "jpg", "png")
 type Extension = String
 
-newtype FileInfo = FileInfo (Tag, Number, Maybe Index, [Class], Extension)
+type Property = (Set Class, Extension)
+
+newtype FileInfo = FileInfo (Tag, Number, Maybe Index, Property)
   deriving (Eq, Ord)
 
 data Error
   = CannotParseFileName   String
-  | SingleAlreadyExists   Tag Number ([Class], Extension) Index ([Class], Extension)
-  | MultipleAlreadyExists Tag Number (Map.Map Index ([Class], Extension)) ([Class], Extension)
-  | DuplicatedSingle      Tag Number ([Class], Extension) ([Class], Extension)
-  | DuplicatedMultiple    Tag Number Index ([Class], Extension) ([Class], Extension)
-
+  | SingleAlreadyExists   Tag Number Property Index Property
+  | MultipleAlreadyExists Tag Number (Map Index Property) Property
+  | DuplicatedSingle      Tag Number Property Property
+  | DuplicatedMultiple    Tag Number Index Property Property
 
 newtype RenumberInfo = RenumberInfo (FileInfo, Number)
 
-type NextNumberMap = Map.Map Tag Number
+type NextNumberMap = Map Tag Number

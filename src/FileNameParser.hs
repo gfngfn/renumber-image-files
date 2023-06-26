@@ -2,12 +2,12 @@
 
 module FileNameParser where
 
-import qualified Data.Text as T
-import qualified Data.Attoparsec.Text as P
+import Data.Text qualified as T
+import Data.Set qualified as Set
+import Data.Attoparsec.Text qualified as P
 import Control.Applicative
 
 import Types
-
 
 parse :: String -> Maybe FileInfo
 parse fname =
@@ -15,48 +15,40 @@ parse fname =
     P.Done "" finfo -> Just finfo
     _               -> Nothing
 
-
 parseDigits :: Int -> P.Parser Int
 parseDigits i = do
   s <- P.count i P.digit
   return (read s :: Int)
 
-
 parseExtension :: P.Parser Extension
 parseExtension =
   P.char '.' *> (P.many1 (P.letter <|> P.digit) <* (P.string "_large" <|> P.string ""))
 
-
-parseClasses :: P.Parser ([Class], Extension)
+parseClasses :: P.Parser Property
 parseClasses =
   p1 <|> p2
     where
-      p1 = (\ext -> ([], ext)) <$> parseExtension
-
-      p2 = (,) <$> (P.string "__" *> (P.sepBy1 pClass pSep)) <*> parseExtension
+      p1 = (\ext -> (Set.empty, ext)) <$> parseExtension
+      p2 = (\classes ext -> (Set.fromList classes, ext)) <$> (P.string "__" *> (P.sepBy1 pClass pSep)) <*> parseExtension
         where
           pClass = P.many1 P.letter
           pSep = P.char '_'
 
-
-parseIndex :: P.Parser (Maybe Index, [Class], Extension)
+parseIndex :: P.Parser (Maybe Index, Property)
 parseIndex =
   p1 <|> p2
     where
       p1 = do
-        (classes, ext) <- parseClasses
-        pure (Nothing, classes, ext)
+        prop <- parseClasses
+        pure (Nothing, prop)
+      p2 = (\n prop -> (Just n, prop)) <$> (P.char '_' *> parseDigits 2) <*> parseClasses
 
-      p2 = (\n (classes, ext) -> (Just n, classes, ext)) <$> (P.char '_' *> parseDigits 2) <*> parseClasses
-
-
-parseNumbering :: P.Parser (Char, Number, Maybe Index, [Class], Extension)
+parseNumbering :: P.Parser (Char, Number, Maybe Index, Property)
 parseNumbering = do
   lastLetter <- P.letter
   number <- parseDigits 3
-  (maybeIndex, classes, ext) <- parseIndex
-  return (lastLetter, number, maybeIndex, classes, ext)
-
+  (maybeIndex, prop) <- parseIndex
+  return (lastLetter, number, maybeIndex, prop)
 
 parseFileName :: P.Parser FileInfo
 parseFileName =
@@ -68,8 +60,8 @@ parseFileName =
           where
             pLast :: P.Parser FileInfo
             pLast = do
-              (c, n, i, classes, ext) <- parseNumbering
-              pure $ FileInfo (sacc ++ [c], n, i, classes, ext)
+              (c, n, i, prop) <- parseNumbering
+              pure $ FileInfo (sacc ++ [c], n, i, prop)
 
             pMiddle :: P.Parser FileInfo
             pMiddle = do

@@ -1,31 +1,28 @@
 module TagMap where
 
-import qualified Data.Map.Strict as Map
-import qualified Data.List as List
-import qualified Data.Maybe as Maybe
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
+import Data.List qualified as List
+import Data.Maybe qualified as Maybe
 
 import Types
-import qualified NumberMap
+import NumberMap (NumberMap)
+import NumberMap qualified
 
-
-type TagMap = Map.Map Tag NumberMap.NumberMap
-
+type TagMap = Map Tag NumberMap
 
 empty :: TagMap
 empty = Map.empty
 
-
-add :: Tag -> Number -> Maybe Index -> ([Class], Extension) -> TagMap -> Either Error TagMap
-add tag n iopt classAndExt tagMap =
+add :: Tag -> Number -> Maybe Index -> Property -> TagMap -> Either Error TagMap
+add tag n iopt prop tagMap =
   case Map.lookup tag tagMap of
     Nothing -> do
-      numberMap <- NumberMap.add n iopt classAndExt (NumberMap.empty tag)
+      numberMap <- NumberMap.add n iopt prop (NumberMap.empty tag)
       return (Map.insert tag numberMap tagMap)
-
     Just numberMap -> do
-      numberMapNew <- NumberMap.add n iopt classAndExt numberMap
+      numberMapNew <- NumberMap.add n iopt prop numberMap
       return (Map.insert tag numberMapNew tagMap)
-
 
 getRenumberInfos :: NextNumberMap -> TagMap -> ([RenumberInfo], NextNumberMap)
 getRenumberInfos preMap tagMap =
