@@ -1,31 +1,28 @@
 module NumberMap where
 
-import qualified Data.Map.Strict as Map
-import qualified Data.List as List
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
+import Data.List qualified as List
 
 import Types
-import qualified IndexMap
+import IndexMap (IndexMap)
+import IndexMap qualified
 
-
-type NumberMap = (Tag, Map.Map Number IndexMap.IndexMap)
-
+type NumberMap = (Tag, Map Number IndexMap)
 
 empty :: Tag -> NumberMap
 empty tag =
   (tag, Map.empty)
 
-
-add :: Number -> Maybe Index -> ([Class], Extension) -> NumberMap -> Either Error NumberMap
+add :: Number -> Maybe Index -> Property -> NumberMap -> Either Error NumberMap
 add n iopt classAndExt (tag, mapMain) =
   case Map.lookup n mapMain of
     Nothing -> do
       let indexMap = IndexMap.singleton tag n iopt classAndExt
       Right (tag, Map.insert n indexMap mapMain)
-
     Just indexMap -> do
       indexMapNew <- IndexMap.add iopt classAndExt indexMap
       Right (tag, Map.insert n indexMapNew mapMain)
-
 
 getRenumberInfos :: Number -> NumberMap -> ([RenumberInfo], Number)
 getRenumberInfos numPrev (_tag, mapMain) =

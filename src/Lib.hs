@@ -1,16 +1,17 @@
 module Lib where
 
-import qualified Data.Ord
-import qualified Data.List as List
-import qualified Data.Either as Either
-import qualified Data.Set as Set
+import Data.Ord qualified as Ord
+import Data.List qualified as List
+import Data.Either qualified as Either
+import Data.Set (Set)
+import Data.Set qualified as Set
 
 import Types
-import qualified FileNameParser
-import qualified TagMap
+import FileNameParser qualified
+import TagMap (TagMap)
+import TagMap qualified
 
-
-checkFileList :: Maybe (Set.Set String) -> [String] -> ([Error], Either [Error] TagMap.TagMap)
+checkFileList :: Maybe (Set Tag) -> [FilePath] -> ([Error], Either [Error] TagMap)
 checkFileList tagRestriction fnames = do
   let (errsParse, finfos) = Either.partitionEithers (List.map parseFileName fnames)
   let
@@ -19,14 +20,11 @@ checkFileList tagRestriction fnames = do
       case tagRestriction of
         Nothing     -> const True
         Just tagSet -> (`Set.member` tagSet)
-
     (errsDup, tagMap) =
-      makeValidationMap isNeededTag (List.sortOn Data.Ord.Down finfos)
-
+      makeValidationMap isNeededTag (List.sortOn Ord.Down finfos)
   case errsDup of
     []    -> (errsParse, Right tagMap)
     _ : _ -> (errsParse, Left errsDup)
-
 
 parseFileName :: String -> Either Error FileInfo
 parseFileName fname =
@@ -34,15 +32,14 @@ parseFileName fname =
     Just finfo -> Right finfo
     Nothing    -> Left (CannotParseFileName fname)
 
-
 makeValidationMap :: (String -> Bool) -> [FileInfo] -> ([Error], TagMap.TagMap)
 makeValidationMap isNeededTag files =
   let
     validateSingle :: ([Error], TagMap.TagMap) -> FileInfo -> ([Error], TagMap.TagMap)
     validateSingle (errAcc, tagMap) finfo =
-      let FileInfo (tag, n, iopt, classes, ext) = finfo in
+      let FileInfo (tag, n, iopt, prop) = finfo in
       if isNeededTag tag then
-        case TagMap.add tag n iopt (classes, ext) tagMap of
+        case TagMap.add tag n iopt prop tagMap of
           Right tagMapNew -> (errAcc, tagMapNew)
           Left err        -> (err : errAcc, tagMap)
       else

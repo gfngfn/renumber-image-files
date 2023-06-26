@@ -1,5 +1,4 @@
 .stack-work/
 dist-newstyle/
-renum-files.cabal
 *~
 .DS_Store

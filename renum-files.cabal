@@ -1,0 +1,101 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           renum-files
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/renum-files#readme>
+homepage:       https://github.com/gfngfn/renum-files#readme
+bug-reports:    https://github.com/gfngfn/renum-files/issues
+author:         gfngfn
+maintainer:     b d . g f n g f n <at> g m a i l . c o m
+copyright:      2018-2023 gfngfn
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/gfngfn/renum-files
+
+library
+  exposed-modules:
+      FileNameParser
+      IndexMap
+      Lib
+      LibIO
+      NumberMap
+      TagMap
+      Types
+  other-modules:
+      Paths_renum_files
+  hs-source-dirs:
+      src
+  build-depends:
+      aeson
+    , attoparsec
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , scientific
+    , split
+    , text
+    , unordered-containers
+  default-language: GHC2021
+
+executable renum-files-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_renum_files
+  hs-source-dirs:
+      app
+  default-extensions:
+      ImportQualifiedPost
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , attoparsec
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , renum-files
+    , scientific
+    , split
+    , text
+    , unordered-containers
+  default-language: GHC2021
+
+test-suite renum-files-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_renum_files
+  hs-source-dirs:
+      test
+  default-extensions:
+      ImportQualifiedPost
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HUnit
+    , aeson
+    , attoparsec
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , renum-files
+    , scientific
+    , split
+    , text
+    , unordered-containers
+  default-language: GHC2021
