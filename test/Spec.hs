@@ -1,4 +1,5 @@
 import Test.HUnit
+import Data.Set qualified as Set
 import qualified LibIO
 
 main :: IO ()
@@ -8,7 +9,7 @@ main = do
 
 showFileTests :: [Test]
 showFileTests =
-  [ TestCase (assertEqual title expected $ LibIO.showFile tag number index (classes, ext)) |
+  [ TestCase (assertEqual title expected $ LibIO.showFile tag number index (Set.fromList classes, ext)) |
     (title, expected, tag, number, index, classes, ext) <-
       [ ("no index, no class",
            "foo042.jpg",
