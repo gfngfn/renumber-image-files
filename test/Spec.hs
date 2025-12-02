@@ -1,6 +1,7 @@
+
 import Test.HUnit
+import LibIO qualified
 import Data.Set qualified as Set
-import qualified LibIO
 
 main :: IO ()
 main = do
@@ -18,10 +19,10 @@ showFileTests =
            "foo042_03.jpg",
            "foo", 42, Just 3, [], "jpg"),
         ("no index, classified",
-           "foo042__star_extr.jpg",
+           "foo042__extr_star.jpg",
            "foo", 42, Nothing, ["star", "extr"], "jpg"),
         ("indexed, classified",
-           "foo042_03__star_extr.jpg",
+           "foo042_03__extr_st.jpg",
            "foo", 42, Just 3, ["star", "extr"], "jpg")
       ]
   ]
